@@ -6,7 +6,7 @@ Most of the jobs are simple mvn builds. Each respository has a
 * checkstylefindbugs- runs mvn checkstyle:checkstyle findbugs:findbugs
 * IT - runs integration tests 
 * QM - runs mvn sonar:sonar
-* CEV - runs org.owasp:dependency-check-maven:check (see [OWASP Dependency Check](org.owasp:dependency-check-maven:check)
+* CEV - runs org.owasp:dependency-check-maven:check (see [OWASP * Dependency Check](org.owasp:dependency-check-maven:check))
 
 
 A special job is `s-case_update-site_build`. This job builds and deploys
