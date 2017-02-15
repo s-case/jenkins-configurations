@@ -1,0 +1,130 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <logRotator class="hudson.tasks.LogRotator">
+    <daysToKeep>-1</daysToKeep>
+    <numToKeep>100</numToKeep>
+    <artifactDaysToKeep>-1</artifactDaysToKeep>
+    <artifactNumToKeep>10</artifactNumToKeep>
+  </logRotator>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <hudson.plugins.openshift.OpenShiftApplicationUUIDJobProperty plugin="openshift@1.4">
+      <applicationUUID>56277741a17356beac000325</applicationUUID>
+    </hudson.plugins.openshift.OpenShiftApplicationUUIDJobProperty>
+    <hudson.plugins.openshift.OpenShiftBuilderSizeJobProperty plugin="openshift@1.4">
+      <builderSize>medium</builderSize>
+    </hudson.plugins.openshift.OpenShiftBuilderSizeJobProperty>
+    <hudson.plugins.openshift.OpenShiftBuilderTimeoutJobProperty plugin="openshift@1.4">
+      <builderTimeout>300000</builderTimeout>
+    </hudson.plugins.openshift.OpenShiftBuilderTimeoutJobProperty>
+    <hudson.plugins.openshift.OpenShiftBuilderTypeJobProperty plugin="openshift@1.4">
+      <builderType>redhat-diy-0.1</builderType>
+    </hudson.plugins.openshift.OpenShiftBuilderTypeJobProperty>
+    <hudson.plugins.openshift.OpenShiftPlatformJobProperty plugin="openshift@1.4">
+      <platform>linux</platform>
+    </hudson.plugins.openshift.OpenShiftPlatformJobProperty>
+  </properties>
+  <scm class="hudson.plugins.git.GitSCM" plugin="git@2.2.7">
+    <configVersion>2</configVersion>
+    <userRemoteConfigs>
+      <hudson.plugins.git.UserRemoteConfig>
+        <url>https://scaseAtsDeveloper:scaseAtsDeveloper,01@github.com/s-case/web-service-composition.git</url>
+      </hudson.plugins.git.UserRemoteConfig>
+    </userRemoteConfigs>
+    <branches>
+      <hudson.plugins.git.BranchSpec>
+        <name>**</name>
+      </hudson.plugins.git.BranchSpec>
+    </branches>
+    <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+    <submoduleCfg class="list"/>
+    <extensions/>
+  </scm>
+  <assignedNode>scaseservicecomposition-build</assignedNode>
+  <canRoam>false</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>true</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>true</blockBuildWhenUpstreamBuilding>
+  <jdk>java8</jdk>
+  <authToken>scase007</authToken>
+  <triggers/>
+  <concurrentBuild>false</concurrentBuild>
+  <customWorkspace>$OPENSHIFT_REPO_DIR</customWorkspace>
+  <builders>
+    <hudson.tasks.Shell>
+      <command>cd $OPENSHIFT_DATA_DIR
+tar -xvf $HOME/../repository.tar
+tar -xvf $HOME/../gnu.tar 
+cat &lt;&lt; EOF &gt; $OPENSHIFT_DATA_DIR/settings.xml
+&lt;settings xmlns=&quot;http://maven.apache.org/settings/1.0.0&quot; 
+        xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; 
+        xsi:schemaLocation=&quot;http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd&quot;&gt;
+
+        &lt;localRepository&gt;$OPENSHIFT_DATA_DIR/repository&lt;/localRepository&gt;
+
+        &lt;servers&gt;
+                &lt;server&gt;
+                        &lt;id&gt;ossrh&lt;/id&gt;
+                        &lt;username&gt;FIEBPQhk&lt;/username&gt;
+                        &lt;password&gt;QqUH1fLwrnnjrCHE7lMVDDPDBHq2Eft3k3tzuom6YcI6&lt;/password&gt;
+                &lt;/server&gt;
+        &lt;/servers&gt;
+
+  &lt;profiles&gt;
+    &lt;profile&gt;
+      &lt;id&gt;ossrh&lt;/id&gt;
+      &lt;activation&gt;
+        &lt;activeByDefault&gt;true&lt;/activeByDefault&gt;
+      &lt;/activation&gt;
+      &lt;properties&gt;
+        &lt;gpg.homedir&gt;$OPENSHIFT_DATA_DIR.gnupg&lt;/gpg.homedir&gt;
+      &lt;/properties&gt;
+    &lt;/profile&gt;
+  &lt;/profiles&gt;
+
+&lt;/settings&gt;
+EOF
+</command>
+    </hudson.tasks.Shell>
+    <hudson.tasks.Maven>
+      <targets>clean install</targets>
+      <mavenName>maven-3.3.3</mavenName>
+      <usePrivateRepository>false</usePrivateRepository>
+      <settings class="jenkins.mvn.FilePathSettingsProvider">
+        <path>$OPENSHIFT_DATA_DIR/settings.xml</path>
+      </settings>
+      <globalSettings class="jenkins.mvn.DefaultGlobalSettingsProvider"/>
+    </hudson.tasks.Maven>
+  </builders>
+  <publishers>
+    <hudson.plugins.sonar.SonarPublisher plugin="sonar@2.1">
+      <jdk>java8</jdk>
+      <branch></branch>
+      <language></language>
+      <mavenOpts></mavenOpts>
+      <jobAdditionalProperties>-Dsonar.userHome=$OPENSHIFT_DATA_DIR</jobAdditionalProperties>
+      <mavenInstallationName>maven-3.3.3</mavenInstallationName>
+      <rootPom></rootPom>
+      <settings class="jenkins.mvn.FilePathSettingsProvider">
+        <path>$OPENSHIFT_DATA_DIR/settings.xml</path>
+      </settings>
+      <globalSettings class="jenkins.mvn.DefaultGlobalSettingsProvider"/>
+      <usePrivateRepository>false</usePrivateRepository>
+    </hudson.plugins.sonar.SonarPublisher>
+    <hudson.tasks.Mailer plugin="mailer@1.11">
+      <recipients>marin.orlic@ericsson.com mkoutli@iti.gr</recipients>
+      <dontNotifyEveryUnstableBuild>false</dontNotifyEveryUnstableBuild>
+      <sendToIndividuals>false</sendToIndividuals>
+    </hudson.tasks.Mailer>
+  </publishers>
+  <buildWrappers>
+    <hudson.plugins.build__timeout.BuildTimeoutWrapper plugin="build-timeout@1.14">
+      <strategy class="hudson.plugins.build_timeout.impl.AbsoluteTimeOutStrategy">
+        <timeoutMinutes>60</timeoutMinutes>
+      </strategy>
+      <operationList/>
+    </hudson.plugins.build__timeout.BuildTimeoutWrapper>
+  </buildWrappers>
+</project>

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?><project>
+  <actions/>
+  <description/>
+  <logRotator class="hudson.tasks.LogRotator">
+    <daysToKeep>-1</daysToKeep>
+    <numToKeep>50</numToKeep>
+    <artifactDaysToKeep>-1</artifactDaysToKeep>
+    <artifactNumToKeep>10</artifactNumToKeep>
+  </logRotator>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <hudson.plugins.openshift.OpenShiftApplicationUUIDJobProperty plugin="openshift@1.4">
+      <applicationUUID>544fc28aa17356e4f9000109</applicationUUID>
+    </hudson.plugins.openshift.OpenShiftApplicationUUIDJobProperty>
+    <hudson.plugins.openshift.OpenShiftBuilderSizeJobProperty plugin="openshift@1.4">
+      <builderSize>medium</builderSize>
+    </hudson.plugins.openshift.OpenShiftBuilderSizeJobProperty>
+    <hudson.plugins.openshift.OpenShiftBuilderTimeoutJobProperty plugin="openshift@1.4">
+      <builderTimeout>300000</builderTimeout>
+    </hudson.plugins.openshift.OpenShiftBuilderTimeoutJobProperty>
+    <hudson.plugins.openshift.OpenShiftBuilderTypeJobProperty plugin="openshift@1.4">
+      <builderType>redhat-diy-0.1</builderType>
+    </hudson.plugins.openshift.OpenShiftBuilderTypeJobProperty>
+    <hudson.plugins.openshift.OpenShiftPlatformJobProperty plugin="openshift@1.4">
+      <platform>linux</platform>
+    </hudson.plugins.openshift.OpenShiftPlatformJobProperty>
+  </properties>
+  <scm class="hudson.plugins.git.GitSCM" plugin="git@2.2.7">
+    <configVersion>2</configVersion>
+    <userRemoteConfigs>
+      <hudson.plugins.git.UserRemoteConfig>
+        <name>origin</name>
+        <refspec>+refs/heads/*:refs/remotes/origin/*</refspec>
+        <url>https://scaseAtsDeveloper:scaseAtsDeveloper,01@github.com/s-case/s-case.git</url>
+      </hudson.plugins.git.UserRemoteConfig>
+    </userRemoteConfigs>
+    <branches>
+      <hudson.plugins.git.BranchSpec>
+        <name>development</name>
+      </hudson.plugins.git.BranchSpec>
+    </branches>
+    <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+    <submoduleCfg class="list"/>
+    <extensions>
+      <hudson.plugins.git.extensions.impl.PerBuildTag/>
+      <hudson.plugins.git.extensions.impl.WipeWorkspace/>
+    </extensions>
+  </scm>
+  <assignedNode>scasecontinuousbuild-build</assignedNode>
+  <canRoam>false</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers/>
+  <concurrentBuild>false</concurrentBuild>
+  <customWorkspace>$OPENSHIFT_REPO_DIR</customWorkspace>
+  <builders>
+    <org.jvnet.hudson.plugins.exclusion.CriticalBlockStart plugin="Exclusion@0.10"/>
+    <hudson.tasks.Maven>
+      <targets>clean install</targets>
+      <properties>maven.repo.local=$OPENSHIFT_REPO_DIR/../.repository</properties>
+      <usePrivateRepository>false</usePrivateRepository>
+      <settings class="jenkins.mvn.DefaultSettingsProvider"/>
+      <globalSettings class="jenkins.mvn.DefaultGlobalSettingsProvider"/>
+    </hudson.tasks.Maven>
+    <org.jvnet.hudson.plugins.exclusion.CriticalBlockEnd plugin="Exclusion@0.10"/>
+  </builders>
+  <publishers>
+    <hudson.tasks.BuildTrigger>
+      <childProjects>scasecheckstylefindbugs-build</childProjects>
+      <threshold>
+        <name>SUCCESS</name>
+        <ordinal>0</ordinal>
+        <color>BLUE</color>
+        <completeBuild>true</completeBuild>
+      </threshold>
+    </hudson.tasks.BuildTrigger>
+  </publishers>
+  <buildWrappers>
+    <hudson.plugins.build__timeout.BuildTimeoutWrapper plugin="build-timeout@1.14">
+      <strategy class="hudson.plugins.build_timeout.impl.AbsoluteTimeOutStrategy">
+        <timeoutMinutes>60</timeoutMinutes>
+      </strategy>
+      <operationList>
+        <hudson.plugins.build__timeout.operations.AbortOperation/>
+      </operationList>
+    </hudson.plugins.build__timeout.BuildTimeoutWrapper>
+    <org.jvnet.hudson.plugins.exclusion.IdAllocator plugin="Exclusion@0.10">
+      <ids>
+        <org.jvnet.hudson.plugins.exclusion.DefaultIdType>
+          <name>SCASE-LOCK</name>
+        </org.jvnet.hudson.plugins.exclusion.DefaultIdType>
+      </ids>
+    </org.jvnet.hudson.plugins.exclusion.IdAllocator>
+  </buildWrappers>
+</project>

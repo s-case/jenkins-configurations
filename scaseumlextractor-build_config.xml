@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?><project>
+  <actions/>
+  <description/>
+  <logRotator class="hudson.tasks.LogRotator">
+    <daysToKeep>-1</daysToKeep>
+    <numToKeep>100</numToKeep>
+    <artifactDaysToKeep>-1</artifactDaysToKeep>
+    <artifactNumToKeep>10</artifactNumToKeep>
+  </logRotator>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <hudson.plugins.openshift.OpenShiftBuilderSizeJobProperty plugin="openshift@1.4">
+      <builderSize>medium</builderSize>
+    </hudson.plugins.openshift.OpenShiftBuilderSizeJobProperty>
+    <hudson.plugins.openshift.OpenShiftBuilderTypeJobProperty plugin="openshift@1.4">
+      <builderType>redhat-diy-0.1</builderType>
+    </hudson.plugins.openshift.OpenShiftBuilderTypeJobProperty>
+    <hudson.plugins.openshift.OpenShiftPlatformJobProperty plugin="openshift@1.4">
+      <platform>linux</platform>
+    </hudson.plugins.openshift.OpenShiftPlatformJobProperty>
+    <hudson.plugins.openshift.OpenShiftApplicationUUIDJobProperty plugin="openshift@1.4">
+      <applicationUUID>55919deda173569dbe0006a6</applicationUUID>
+    </hudson.plugins.openshift.OpenShiftApplicationUUIDJobProperty>
+    <hudson.plugins.openshift.OpenShiftBuilderTimeoutJobProperty plugin="openshift@1.4">
+      <builderTimeout>300000</builderTimeout>
+    </hudson.plugins.openshift.OpenShiftBuilderTimeoutJobProperty>
+  </properties>
+  <scm class="hudson.plugins.git.GitSCM" plugin="git@2.2.7">
+    <configVersion>2</configVersion>
+    <userRemoteConfigs>
+      <hudson.plugins.git.UserRemoteConfig>
+        <name/>
+        <refspec/>
+        <url>ssh://55919deda173569dbe0006a6@scaseumlextractor-scase.spree.de/~/git/scaseumlextractor.git</url>
+      </hudson.plugins.git.UserRemoteConfig>
+    </userRemoteConfigs>
+    <branches>
+      <hudson.plugins.git.BranchSpec>
+        <name>**</name>
+      </hudson.plugins.git.BranchSpec>
+    </branches>
+    <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+    <gitTool>Default</gitTool>
+    <submoduleCfg class="list"/>
+    <extensions>
+      <hudson.plugins.git.extensions.impl.PerBuildTag/>
+      <hudson.plugins.git.extensions.impl.WipeWorkspace/>
+    </extensions>
+  </scm>
+  <assignedNode>scaseumlextractor-build</assignedNode>
+  <canRoam>false</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers/>
+  <concurrentBuild>false</concurrentBuild>
+  <customWorkspace>$OPENSHIFT_REPO_DIR</customWorkspace>
+  <builders>
+    <hudson.tasks.Shell>
+      <command>
+source $OPENSHIFT_CARTRIDGE_SDK_BASH
+
+alias rsync="rsync --delete-after -az -e '$GIT_SSH'"
+
+upstream_ssh="55919deda173569dbe0006a6@scaseumlextractor-${OPENSHIFT_NAMESPACE}.spree.de"
+
+# remove previous metadata, if any
+rm -f $OPENSHIFT_HOMEDIR/app-deployments/current/metadata.json
+
+if ! marker_present "force_clean_build"; then
+  # don't fail if these rsyncs fail
+  set +e
+  rsync $upstream_ssh:'$OPENSHIFT_BUILD_DEPENDENCIES_DIR' $OPENSHIFT_BUILD_DEPENDENCIES_DIR
+  rsync $upstream_ssh:'$OPENSHIFT_DEPENDENCIES_DIR' $OPENSHIFT_DEPENDENCIES_DIR
+  set -e
+fi
+
+# Build/update libs and run user pre_build and build
+gear build
+
+# Run tests here
+
+# Deploy new build
+
+# Stop app
+$GIT_SSH $upstream_ssh "gear stop --conditional --exclude-web-proxy --git-ref $GIT_COMMIT"
+
+deployment_dir=`$GIT_SSH $upstream_ssh 'gear create-deployment-dir'`
+
+# Push content back to application
+rsync $OPENSHIFT_HOMEDIR/app-deployments/current/metadata.json $upstream_ssh:app-deployments/$deployment_dir/metadata.json
+rsync --exclude .git $WORKSPACE/ $upstream_ssh:app-root/runtime/repo/
+rsync $OPENSHIFT_BUILD_DEPENDENCIES_DIR $upstream_ssh:app-root/runtime/build-dependencies/
+rsync $OPENSHIFT_DEPENDENCIES_DIR $upstream_ssh:app-root/runtime/dependencies/
+
+# Configure / start app
+$GIT_SSH $upstream_ssh "gear remotedeploy --deployment-datetime $deployment_dir"
+
+      </command>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers>
+    <hudson.tasks.ArtifactArchiver>
+      <artifacts>**</artifacts>
+      <allowEmptyArchive>false</allowEmptyArchive>
+      <onlyIfSuccessful>false</onlyIfSuccessful>
+      <fingerprint>false</fingerprint>
+      <defaultExcludes>true</defaultExcludes>
+    </hudson.tasks.ArtifactArchiver>
+  </publishers>
+  <buildWrappers/>
+</project>
